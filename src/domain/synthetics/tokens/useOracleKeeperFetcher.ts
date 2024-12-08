@@ -15,7 +15,7 @@ export function useOracleKeeperFetcher(chainId: number): OracleFetcher {
       forceIncentivesActive: Boolean(forceIncentivesActive),
       setOracleKeeperInstancesConfig,
     });
-
+    // console.log("instance--->", instance);
     return instance;
   }, [chainId, forceIncentivesActive, oracleKeeperIndex, setOracleKeeperInstancesConfig]);
 }

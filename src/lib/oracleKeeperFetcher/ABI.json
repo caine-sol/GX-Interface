@@ -1,19 +1,20 @@
 [
     {
-      "inputs": [],
-      "name": "getXauUsdPrice",
-      "outputs": [{"internalType": "int256", "name": "", "type": "int256"}],
-      "stateMutability": "view",
-      "type": "function"
+        "inputs": [],
+        "stateMutability": "nonpayable",
+        "type": "constructor"
     },
     {
-      "inputs": [
-        {"internalType": "address", "name": "base", "type": "address"},
-        {"internalType": "address", "name": "quote", "type": "address"}
-      ],
-      "name": "getPrice",
-      "outputs": [{"internalType": "int256", "name": "", "type": "int256"}],
-      "stateMutability": "view",
-      "type": "function"
+        "inputs": [],
+        "name": "getChainlinkDataFeedLatestAnswer",
+        "outputs": [
+            {
+                "internalType": "int256",
+                "name": "",
+                "type": "int256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
     }
-  ]
+]

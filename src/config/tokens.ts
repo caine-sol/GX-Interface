@@ -632,7 +632,7 @@ export const TOKENS: { [chainId: number]: Token[] } = {
       symbol: "XAU",
       address: "0x1F954Dc24a49708C26E0C1777f16750B5C6d5a2c",
       decimals: 18,
-      imageUrl: "https://raw.githubusercontent.com/gmx-io/gmx-assets/main/GMX-Assets/PNG/GLV_LOGO.png",
+      imageUrl: "https://raw.githubusercontent.com/gmx-io/gmx-assets/main/GMX-Assets/PNG/GM_LOGO.png",
       isPlatformToken: true,
     },
   ],

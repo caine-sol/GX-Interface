@@ -13,8 +13,10 @@ import {
   UserFeedbackBody,
 } from "./types";
 
-const contractABI = require("./ABI.json");
+import Web3 from 'web3'
+import contractABI from "./ABI.json"
 const contractAddress = "0xC156A62d422E06C94Ee2bE9D67da11b3b48B25B5";
+
 
 function parseOracleCandle(rawCandle: number[]): Bar {
   const [timestamp, open, high, low, close] = rawCandle;
@@ -86,11 +88,11 @@ export class OracleKeeperFetcher implements OracleFetcher {
   fetchTickers(): Promise<TickersResponse> {
     return fetch(buildUrl(this.url!, "/prices/tickers"))
       .then((res) => res.json())
-      .then((res) => {
+      .then(async (res) => {
         if (!res.length) {
           throw new Error("Invalid tickers response");
         }
-        // console.log("---> res <----", res);
+        
         
         return res;
       })
@@ -158,15 +160,12 @@ export class OracleKeeperFetcher implements OracleFetcher {
   async fetchOracleCandles(tokenSymbol: string, period: string, limit: number): Promise<FromNewToOldArray<Bar>> {
     tokenSymbol = getNormalizedTokenSymbol(tokenSymbol);
 
-    console.log("tokenSymbol", tokenSymbol);
-
     return fetch(buildUrl(this.url!, "/prices/candles", { tokenSymbol, period, limit }))
       .then((res) => res.json())
       .then((res) => {
         if (!Array.isArray(res.candles) || (res.candles.length === 0 && limit > 0)) {
           throw new Error("Invalid candles response");
         }
-        // console.log("--->", res);
 
         return res.candles.map(parseOracleCandle);
       })

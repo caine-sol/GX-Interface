@@ -18,6 +18,7 @@ import gmxAvax from "img/ic_gmx_avax.svg";
 import glpArbitrum from "img/ic_glp_arbitrum.svg";
 import glpAvax from "img/ic_glp_avalanche.svg";
 import glvIcon from "img/ic_glv_40.svg";
+import xauIcon from "img/ic_xau_40.svg";
 
 type ChainIcons = {
   network?: string;
@@ -27,6 +28,7 @@ type ChainIcons = {
   gm: string;
   gmxOutline?: string;
   glv?: string;
+  xau?: string;
 };
 
 const ICONS: Record<number | "common", ChainIcons> = {
@@ -63,6 +65,7 @@ const ICONS: Record<number | "common", ChainIcons> = {
     esgmx: esGMXIcon,
     gm: gmIcon,
     glv: glvIcon,
+    xau: xauIcon,
   },
 };
 

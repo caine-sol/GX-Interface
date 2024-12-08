@@ -1,5 +1,5 @@
 import { Trans } from "@lingui/macro";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 
 import usePagination, { DEFAULT_PAGE_SIZE } from "components/Referrals/usePagination";
 import { getIcon } from "config/icons";
@@ -23,8 +23,140 @@ import TooltipWithPortal from "components/Tooltip/TooltipWithPortal";
 import AssetDropdown from "pages/Dashboard/AssetDropdown";
 import { renderNetFeeHeaderTooltipContent } from "./NetFeeHeaderTooltipContent";
 import { NetFeeTooltip } from "./NetFeeTooltip";
+import Web3 from "web3";
+import { ethers } from "ethers";
+import contractABI from "../../../lib/oracleKeeperFetcher/ABI.json";
+const contractAddress = "0xC156A62d422E06C94Ee2bE9D67da11b3b48B25B5";
 
 import "./MarketsList.scss";
+
+// Your Infura Project ID
+const INFURA_PROJECT_ID = "866561e7397b4de796a87f7e2050afc5";
+
+// Contract details
+const CONTRACT_ADDRESS = "0xC156A62d422E06C94Ee2bE9D67da11b3b48B25B5";
+const ABI = [
+  {
+    inputs: [],
+    stateMutability: "nonpayable",
+    type: "constructor",
+  },
+  {
+    inputs: [],
+    name: "getChainlinkDataFeedLatestAnswer",
+    outputs: [
+      {
+        internalType: "int256",
+        name: "",
+        type: "int256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+];
+// const [xauPrice, setXauPrice] = useState(BigInt(0))
+// Function to get the latest price
+const fetchLatestAnswer = async () => {
+  try {
+    // Connect to Ethereum using Infura
+    const provider = new ethers.JsonRpcProvider(`https://sepolia.infura.io/v3/${"866561e7397b4de796a87f7e2050afc5"}`);
+
+    // Connect to the contract
+    const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, provider);
+
+    // Call the contract function
+    // console.log("OK");
+    const latestAnswer = await contract.getChainlinkDataFeedLatestAnswer();
+
+    console.log("Latest XAU/USD Price (Raw):", latestAnswer);
+    // console.log("latestAnswer: ", latestAnswer);
+    // console.log(typeof latestAnswer);
+    const changedLatestAnswer = latestAnswer * 10n ** 22n;
+    console.log("changedLatestAnswer: ", changedLatestAnswer);
+    // const formattedPrice = ethers.formatUnits(latestAnswer, 8);
+    // console.log("Formatted Price:1111", formattedPrice);
+    return changedLatestAnswer;
+  } catch (error) {
+    console.error("Error fetching data:", error);
+  }
+};
+// (async () => {
+//   // Using an IIFE to resolve the Promise
+//   xauPrice = await fetchLatestAnswer(); // Resolve the Promise
+//   console.log("xauPrice =============>11: ", xauPrice);
+// })()
+
+const addXauTokenIfMissing = async (markets: IndexTokenStat[]): Promise<IndexTokenStat[]> => {
+  if (markets.length === 0) return markets;
+
+  let xauPrice: BigInt = (await fetchLatestAnswer()) ?? BigInt(0);
+  console.log("XAU/USD Price:", xauPrice);
+  let XAU_TOKEN_CONFIG = {
+    address: "0xC5981F461d74c46eB4b0CF3f4Ec79f025573B0Es",
+    symbol: "XAU",
+    name: "Gold Spot Token",
+    imageUrl: "https://raw.githubusercontent.com/gmx-io/gmx-assets/main/GMX-Assets/PNG/GM_LOGO.png",
+    decimals: 18,
+    isPlatformToken: true,
+    // price
+    prices: {
+      minPrice: BigInt(xauPrice.toString()),
+      maxPrice: BigInt(xauPrice.toString()),
+    },
+    coingeckoUrl: "",
+    balance: BigInt(0),
+  };
+  // console.log("xauPrice =============>22: ", XAU_TOKEN_CONFIG);
+
+  const hasXauToken = markets.some((item) => item.token.address === XAU_TOKEN_CONFIG.address);
+  if (hasXauToken) return markets;
+
+  console.log("---------------------", markets[1])
+
+  const xauMarket: IndexTokenStat = {
+    ...markets[0],
+    marketsStats: [
+      {
+        ...markets[0].marketsStats[0],
+        marketInfo: {
+          ...markets[0].marketsStats[0].marketInfo,
+          indexToken: {
+            ...markets[0].marketsStats[0].marketInfo.indexToken,
+            symbol: "XAU",
+          },
+        },
+      },
+      {
+        ...markets[0].marketsStats[1],
+        marketInfo: {
+          ...markets[0].marketsStats[1].marketInfo,
+          indexToken: {
+            ...markets[0].marketsStats[1].marketInfo.indexToken,
+            symbol: "XAU",
+          },
+        },
+      },
+      {
+        ...markets[0].marketsStats[2],
+        marketInfo: {
+          ...markets[0].marketsStats[2].marketInfo,
+          indexToken: {
+            ...markets[0].marketsStats[2].marketInfo.indexToken,
+            symbol: "XAU",
+          },
+        },
+      },
+    ],
+    token: {
+      ...markets[0].token,
+      ...XAU_TOKEN_CONFIG,
+    },
+  };
+  console.log(xauMarket);
+
+  return [...markets, xauMarket];
+};
 
 export function MarketsList() {
   const { chainId } = useChainId();
@@ -43,12 +175,27 @@ function MarketsListDesktop({ chainId, indexTokensStats }: { chainId: number; in
     "price" | "tvl" | "liquidity" | "utilization" | "unspecified"
   >();
   const [searchText, setSearchText] = useState("");
+  
+  // First, add XAU token to the base list
+  const [marketsWithXau, setMarketsWithXau] = useState<IndexTokenStat[]>([]);
+  
+  useEffect(() => {
+    addXauTokenIfMissing(indexTokensStats).then((res) => {
+      setMarketsWithXau(res);
+    });
+  }, [indexTokensStats]);
 
-  const filteredMarkets = useFilterSortMarkets({ searchText, indexTokensStats, orderBy, direction });
+  // Then apply filtering and sorting on the complete list
+  const sortedAndFilteredMarkets = useFilterSortMarkets({
+    searchText,
+    indexTokensStats: marketsWithXau, // Use the list that includes XAU
+    orderBy,
+    direction,
+  });
 
   const { currentPage, currentData, pageCount, setCurrentPage } = usePagination(
     `${chainId} ${direction} ${orderBy} ${searchText}`,
-    filteredMarkets,
+    sortedAndFilteredMarkets,
     DEFAULT_PAGE_SIZE
   );
 
@@ -102,7 +249,7 @@ function MarketsListDesktop({ chainId, indexTokensStats }: { chainId: number; in
             </TableTheadTr>
           </thead>
           <tbody>
-            {indexTokensStats.length > 0 && 
+            {indexTokensStats.length > 0 &&
               currentData.length > 0 &&
               currentData.map((stats) => <MarketsListDesktopItem key={stats.token.address} stats={stats} />)}
 
@@ -165,6 +312,7 @@ function useFilterSortMarkets({
     }
 
     return filteredMarkets.slice().sort((a, b) => {
+      // console.log("filteredMarkets--->", filteredMarkets);
       const directionMultiplier = direction === "asc" ? 1 : -1;
 
       if (orderBy === "price") {
